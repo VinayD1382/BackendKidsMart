@@ -31,7 +31,7 @@ import orderPays from "./Router/OrdersPay.js";
 const app = express();
 
 app.use(cors({
-  origin: process.env.CLIENT_URL, 
+  origin: "https://kidsmartshop.netlify.app", // your frontend URL
   credentials: true
 }));
 app.use(express.json());
