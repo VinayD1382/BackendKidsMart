@@ -32,7 +32,7 @@ const app = express();
 
 // CORS setup for Netlify frontend
 app.use(cors({
-  origin: "https://kidsmartshop.netlify.app",
+  origin: "https://kidsmartshop.netlify.app/",
   credentials: true
 }));
 app.use(express.json());
