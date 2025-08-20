@@ -59,14 +59,12 @@ app.use("/api", userRoutes);
 app.use("/api/users",UserAuth);
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-const serviceAccount = JSON.parse(
-  readFileSync("./serviceAccountKey.json", "utf8")
-);
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
 // Initialize Firebase Admin SDK
 if (!admin.apps.length) {
   admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
+    credential: admin.credential.cert(serviceAccount),
   });
 }
 const allowedAdmins = ["+918884681382"]; // Add more numbers if needed
