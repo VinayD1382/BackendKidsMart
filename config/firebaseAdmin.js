@@ -1,24 +1,28 @@
 import admin from "firebase-admin";
-import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
+// Support both local dev (file) and production (env var)
 let serviceAccount;
 
 if (process.env.SERVICE_ACCOUNT_KEY) {
-  // ✅ Load from environment variable on Render
+  // 🔥 Render: Load from environment variable
   serviceAccount = JSON.parse(process.env.SERVICE_ACCOUNT_KEY);
 } else {
-  // ✅ Fallback: Load from local file in dev
+  // 💻 Local development: Load from file
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
   const serviceAccountPath = path.join(__dirname, "../serviceAccountKey.json");
-  serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, "utf8"));
+  serviceAccount = JSON.parse(
+    await import("fs").then(fs => fs.readFileSync(serviceAccountPath, "utf8"))
+  );
 }
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
+
+export default admin;
+
 
 export default admin;
