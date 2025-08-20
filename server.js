@@ -5,18 +5,11 @@ import dotenv from "dotenv";
 import path, { dirname } from "path";
 import { fileURLToPath } from "url";
 import admin from "firebase-admin";
-import { readFileSync } from "fs";
 import jwt from "jsonwebtoken";
+
+// Routes imports
 import userRoutes from "./Router/UserLogRouter.js";
 import UserAuth from "./Router/UserAuthRouter.js";
-// ✅ Setup for __dirname in ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// ✅ Load .env
-dotenv.config();
-
-// ✅ Import routes
 import kidsRoutes from "./Router/kidsrouter.js";
 import Stationroute from "./Router/StationaryRouter.js";
 import Toys from "./Router/ToysRouter.js";
@@ -28,23 +21,63 @@ import wishlistRoutes from "./Router/WishlistRouter.js";
 import checkoutRouter from "./Router/CheckoutRouter.js";
 import orderPays from "./Router/OrdersPay.js";
 
+// Setup __dirname in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Load environment variables
+dotenv.config();
+
 const app = express();
 
+// CORS setup for Netlify frontend
 app.use(cors({
-  origin: "https://kidsmartshop.netlify.app", // your frontend URL
+  origin: "https://kidsmartshop.netlify.app",
   credentials: true
 }));
 app.use(express.json());
 
-const MONGO_URI =
-  process.env.MONGO_URI ||
-  "mongodb+srv://<user>:<pass>@cluster0.mongodb.net/MERNPRO";
+// MongoDB connection
+const MONGO_URI = process.env.MONGO_URI;
+if (!MONGO_URI) {
+  console.error("❌ MONGO_URI missing!");
+  process.exit(1);
+}
 
-mongoose
-  .connect(MONGO_URI)
+mongoose.connect(MONGO_URI)
   .then(() => console.log("✅ MongoDB Atlas Connected"))
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
+// Firebase Admin setup
+if (!process.env.SERVICE_ACCOUNT) {
+  console.error("❌ SERVICE_ACCOUNT env variable is missing!");
+  process.exit(1);
+}
+
+let serviceAccount;
+try {
+  serviceAccount = JSON.parse(process.env.SERVICE_ACCOUNT);
+  serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+} catch (err) {
+  console.error("❌ Failed to parse SERVICE_ACCOUNT JSON:", err);
+  process.exit(1);
+}
+
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+  });
+}
+
+// JWT helper for admin
+const allowedAdmins = ["+918884681382"];
+function createJwtForUser(uid) {
+  return jwt.sign({ uid, role: "admin" }, process.env.JWT_SECRET, {
+    expiresIn: "1h"
+  });
+}
+
+// Routes
 app.use("/api/home", homeroute);
 app.use("/api/kids", kidsRoutes);
 app.use("/api/toys", Toys);
@@ -56,36 +89,22 @@ app.use("/api/wishlist", wishlistRoutes);
 app.use("/api", checkoutRouter);
 app.use("/api/orderp", orderPays);
 app.use("/api", userRoutes);
-app.use("/api/users",UserAuth);
+app.use("/api/users", UserAuth);
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-const serviceAccount = JSON.parse(process.env.SERVICE_ACCOUNT);
 
-// Initialize Firebase Admin SDK
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-  });
-}
-const allowedAdmins = ["+918884681382"]; // Add more numbers if needed
-function createJwtForUser(uid) {
-  return jwt.sign({ uid, role: "admin" }, process.env.JWT_SECRET, {
-    expiresIn: "1h"
-  });
-}
+// Admin OTP verification
 app.post("/admin/verify-otp", async (req, res) => {
-  const { idToken } = req.body; // This should come from Firebase after OTP verification in frontend
+  const { idToken } = req.body;
 
   try {
     const decodedToken = await admin.auth().verifyIdToken(idToken);
     console.log("Decoded token:", decodedToken);
 
     if (decodedToken.phone_number === "+918884681382") {
-      // ✅ Create your JWT just like Google sign-in
       const token = jwt.sign({ uid: decodedToken.uid }, process.env.JWT_SECRET, {
         expiresIn: "1h",
       });
-
       return res.json({ token });
     } else {
       return res.status(401).json({ error: "Unauthorized phone number" });
@@ -95,6 +114,8 @@ app.post("/admin/verify-otp", async (req, res) => {
     return res.status(401).json({ error: "Invalid token" });
   }
 });
+
+// Admin phone-login
 app.post("/api/admin/phone-login", async (req, res) => {
   const { idToken } = req.body;
 
@@ -103,12 +124,9 @@ app.post("/api/admin/phone-login", async (req, res) => {
   }
 
   try {
-    // Verify token with Firebase Admin
     const decodedToken = await admin.auth().verifyIdToken(idToken);
-
     console.log("Decoded token:", decodedToken);
 
-    // Check if phone number is in allowed list
     if (allowedAdmins.includes(decodedToken.phone_number)) {
       const yourJwt = createJwtForUser(decodedToken.uid);
       return res.json({ token: yourJwt });
@@ -121,9 +139,11 @@ app.post("/api/admin/phone-login", async (req, res) => {
   }
 });
 
-// Instead of: app.listen(5000)
-const PORT = process.env.PORT || 5000; // fallback for local testing
+// Render-ready port binding
+const PORT = parseInt(process.env.PORT) || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
+
+
 
