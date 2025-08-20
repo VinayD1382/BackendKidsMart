@@ -59,7 +59,7 @@ app.use("/api", userRoutes);
 app.use("/api/users",UserAuth);
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+const serviceAccount = JSON.parse(process.env.SERVICE_ACCOUNT);
 
 // Initialize Firebase Admin SDK
 if (!admin.apps.length) {
