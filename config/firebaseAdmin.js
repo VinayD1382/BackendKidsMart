@@ -1,15 +1,16 @@
-
 import admin from "firebase-admin";
 
 let serviceAccount;
 
-try {
+if (process.env.SERVICE_ACCOUNT) {
+  // 🚀 Running on Render (env variable)
   serviceAccount = JSON.parse(process.env.SERVICE_ACCOUNT);
-
-  // 🔑 Fix: replace \\n with real newlines in private_key
   serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
-} catch (err) {
-  console.error("Failed to load SERVICE_ACCOUNT:", err);
+} else {
+  // 🖥️ Running locally (from JSON file)
+  serviceAccount = JSON.parse(
+    fs.readFileSync("./serviceAccountKey.json", "utf8")
+  );
 }
 
 admin.initializeApp({
@@ -17,4 +18,5 @@ admin.initializeApp({
 });
 
 export default admin;
+
 
