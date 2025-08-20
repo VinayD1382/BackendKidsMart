@@ -121,7 +121,9 @@ app.post("/api/admin/phone-login", async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 5000;
+// Instead of: app.listen(5000)
+const PORT = process.env.PORT || 5000; // fallback for local testing
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
+
