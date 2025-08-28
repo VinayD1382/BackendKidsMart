@@ -1,16 +1,22 @@
 import admin from "firebase-admin";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+let serviceAccount;
 
-const serviceAccountPath = path.join(__dirname, "../serviceAccountKey.json");
-const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, "utf8"));
+if (process.env.SERVICE_ACCOUNT) {
+  // 🚀 Running on Render (env variable)
+  serviceAccount = JSON.parse(process.env.SERVICE_ACCOUNT);
+  serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+} else {
+  // 🖥️ Running locally (from JSON file)
+  serviceAccount = JSON.parse(
+    fs.readFileSync("./serviceAccountKey.json", "utf8")
+  );
+}
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
 export default admin;
+
+
