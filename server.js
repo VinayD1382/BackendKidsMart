@@ -171,10 +171,9 @@ app.get("/", (req, res) => {
 // Render-ready port binding
 // Render-ready port binding
 const PORT = process.env.PORT || 5000;  // must come directly from Render
-app.listen(PORT, () => {
+app.listen(Number(PORT), () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
-
 
 
 
