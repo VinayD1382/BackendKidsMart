@@ -116,13 +116,11 @@ app.use("/api", userRoutes);
 app.use("/api/users", UserAuth);
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-<<<<<<< HEAD
+
 
 const serviceAccount = JSON.parse(
   readFileSync("./serviceAccountKey.json", "utf8")
 );
-=======
->>>>>>> a08e96b35f72f58dae8ec58a2200fff50ddb72a4
 
 // Admin OTP verification
 app.post("/admin/verify-otp", async (req, res) => {
