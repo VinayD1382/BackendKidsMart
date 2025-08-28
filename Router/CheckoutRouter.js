@@ -8,8 +8,14 @@ import Kidswear from "../model/kids.js";
 import Stationary from "../model/Stationary.js";
 import Toys from "../model/toys.js";
 import admin from "../config/firebaseAdmin.js";
+import Razorpay from "razorpay";
 
 const router = express.Router();
+
+const razorpay = new Razorpay({
+  key_id: "rzp_test_RAduDXwwdhSAGm",       // from Razorpay Dashboard (Test Mode)
+  key_secret: "gbTwkfbTnd3XV29WpBJSi4mv"
+});
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -229,8 +235,42 @@ router.get('/orders/:email', async (req, res) => {
   }
 });
 
+// ✅ Get checkout products for a specific user (by email)
+router.get("/checkout/user/:email", async (req, res) => {
+  try {
+    const email = req.params.email;
 
+    // Find orders where user email matches
+    const userOrders = await Checkout.find({ email: email });
 
+    if (userOrders.length === 0) {
+      return res.status(404).json({ message: "No orders found for this user" });
+    }
+
+    res.json(userOrders);
+  } catch (error) {
+    console.error("Error fetching user orders:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+router.post("/create-order", async (req, res) => {
+  try {
+    const { amount } = req.body;
+
+    const options = {
+      amount: amount * 100, // amount in paise
+      currency: "INR",
+      receipt: "order_rcptid_" + Date.now(),
+    };
+
+    const order = await razorpay.orders.create(options);
+    res.json(order);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error creating Razorpay order");
+  }
+});
 
 
 

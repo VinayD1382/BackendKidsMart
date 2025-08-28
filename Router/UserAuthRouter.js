@@ -1,12 +1,14 @@
 import express from "express";
-import User from "../model/Userauth.js";  // adjust path as needed
-import Checkout from '../model/Checkout.js';  // your Checkout schema
-import bcrypt from 'bcrypt';
+import User from "../model/Userauth.js";   // your UserAuth schema
+import Checkout from "../model/Checkout.js";  // your Checkout schema
 
 const router = express.Router();
 
-// Register new user (POST /api/users)
-router.post("/", async (req, res) => {
+/**
+ * @route   POST /api/users/register
+ * @desc    Register new user
+ */
+router.post("/register", async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -14,7 +16,7 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ message: "Email and password are required." });
     }
 
-    // Check if user already exists
+    // check if user already exists
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
       return res.status(409).json({ message: "User already exists." });
@@ -22,120 +24,91 @@ router.post("/", async (req, res) => {
 
     const newUser = new User({
       email: email.toLowerCase(),
-      password, // storing plain password (not recommended!)
+      password, // stored as plain text (for now)
     });
 
     await newUser.save();
 
-    res.status(201).json({ message: "User registered successfully.", userId: newUser._id });
+    res.status(201).json({
+      success: true,
+      message: "User registered successfully.",
+      user: newUser,
+    });
   } catch (error) {
     console.error("Error registering user:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
-router.post("/", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    if (!email || !password)
-      return res.status(400).json({ message: "Email and password are required." });
 
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
-    if (existingUser)
-      return res.status(409).json({ message: "User already exists." });
-
-    const newUser = new User({ email: email.toLowerCase(), password });
-    await newUser.save();
-
-    res.status(201).json({ message: "User registered successfully.", userId: newUser._id });
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// Get user and orders by email
-router.get("/:email", async (req, res) => {
-  const email = req.params.email.toLowerCase();
-  try {
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    const orders = await Checkout.find({ email });
-
-    return res.json({ user: { email: user.email, id: user._id }, orders });
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// Get user by email (GET /api/users/:email)
-router.get('/:email', async (req, res) => {
-  const email = req.params.email.toLowerCase();
-
-  try {
-    // Check if user exists in UserAuth
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    // Fetch all orders/products from Checkout for this user
-    const orders = await Checkout.find({ email });
-
-    // Return the orders (products) in response
-    return res.json({ orders });
-  } catch (error) {
-    console.error('Error fetching user products:', error);
-    return res.status(500).json({ message: 'Server error' });
-  }
-});
-router.post("/register", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    if (!email || !password)
-      return res.status(400).json({ message: "Email and password are required." });
-
-    // Check if user already exists
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
-    if (existingUser)
-      return res.status(409).json({ message: "User already exists." });
-
-    // Hash password before saving for security (bcrypt)
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const newUser = new User({
-      email: email.toLowerCase(),
-      password: hashedPassword,
-    });
-
-    await newUser.save();
-
-    res.status(201).json({ message: "User registered successfully." });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// Login route
+/**
+ * @route   POST /api/users/login
+ * @desc    Login user
+ */
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password)
-      return res.status(400).json({ message: "Email and password are required." });
-
     const user = await User.findOne({ email: email.toLowerCase() });
-    if (!user) return res.status(404).json({ message: "User not found." });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
 
-    // Check password
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).json({ message: "Invalid password." });
+    if (user.password !== password) {
+      return res.status(400).json({ success: false, message: "Invalid password" });
+    }
 
-    // Login success
-    res.status(200).json({ message: "Login successful.", email: user.email });
-  } catch (err) {
-    console.error(err);
+    res.json({
+      success: true,
+      message: "Login successful",
+      user: { id: user._id, email: user.email },
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * @route   GET /api/users/:email
+ * @desc    Get user details + orders
+ */
+router.get("/:email", async (req, res) => {
+  try {
+    const email = req.params.email.toLowerCase();
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // get orders for this user
+    const orders = await Checkout.find({ email });
+
+    res.json({
+      success: true,
+      user: { id: user._id, email: user.email },
+      orders,
+    });
+  } catch (error) {
+    console.error("Error fetching user and orders:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+/*
+app.get("/api/orders/:email", async (req, res) => {
+  const email = req.params.email;
+  const orders = await Orders.find({ email });
+  res.json(orders);
+});*/
+router.get("/orders/:email", async (req, res) => {
+  try {
+    const email = req.params.email.toLowerCase();
+    const orders = await Checkout.find({ email });  // ✅ use Checkout
+
+    res.json({ orders }); // ✅ wrap in object so frontend works
+  } catch (error) {
+    console.error("Error fetching orders:", error);
     res.status(500).json({ message: "Server error" });
   }
 });

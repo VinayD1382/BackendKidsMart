@@ -9,7 +9,6 @@ import { readFileSync } from "fs";
 import jwt from "jsonwebtoken";
 import userRoutes from "./Router/UserLogRouter.js";
 import UserAuth from "./Router/UserAuthRouter.js";
-// ✅ Setup for __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -56,6 +55,7 @@ app.use("/api", userRoutes);
 app.use("/api/users",UserAuth);
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 const serviceAccount = JSON.parse(
   readFileSync("./serviceAccountKey.json", "utf8")
 );
