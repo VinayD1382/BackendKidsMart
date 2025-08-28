@@ -10,7 +10,7 @@ import jwt from "jsonwebtoken";
 // Routes imports
 import userRoutes from "./Router/UserLogRouter.js";
 import UserAuth from "./Router/UserAuthRouter.js";
-<<<<<<< HEAD
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -18,8 +18,7 @@ const __dirname = dirname(__filename);
 dotenv.config();
 
 // ✅ Import routes
-=======
->>>>>>> a08e96b35f72f58dae8ec58a2200fff50ddb72a4
+
 import kidsRoutes from "./Router/kidsrouter.js";
 import Stationroute from "./Router/StationaryRouter.js";
 import Toys from "./Router/ToysRouter.js";
