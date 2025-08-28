@@ -171,6 +171,9 @@ app.post("/api/admin/phone-login", async (req, res) => {
     return res.status(401).json({ error: "Invalid token" });
   }
 });
+app.get("/", (req, res) => {
+  res.send("Backend is running 🚀");
+});
 
 // Render-ready port binding
 const PORT = process.env.PORT || 5000;
