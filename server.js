@@ -169,8 +169,12 @@ app.get("/", (req, res) => {
 });
 
 // Render-ready port binding
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// Render-ready port binding
+const PORT = process.env.PORT || 5000;  // must come directly from Render
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
+
 
 
 
