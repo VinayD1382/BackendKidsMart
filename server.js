@@ -31,8 +31,7 @@ import checkoutRouter from "./Router/CheckoutRouter.js";
 import orderPays from "./Router/OrdersPay.js";
 
 // Setup __dirname in ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+
 
 // Load environment variables
 dotenv.config();
